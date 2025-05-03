@@ -1,10 +1,20 @@
 [
-    {
-      "name": "Alpspitze",
-      "position": [47.455, 11.042]
-    },
-    {
-      "name": "Zugspitze",
-      "position": [47.421, 10.985]
-    }
-  ]
+  {
+    "name": "Riederstein",
+    "date": "2025/04/21",
+    "position": [47.704626651798584, 11.79285473068271],
+    "photos": "https://photos.app.goo.gl"
+  },
+  {
+    "name": "Hackensee",
+    "date": "2025/03/23",
+    "position": [47.848879775661864, 11.641732891478622],
+    "photos": "https://photos.app.goo.gl"
+  },
+  {
+    "name": "Am Bayersoiener See",
+    "date": "2024/08/15",
+    "position": [47.69044251854644, 11.00552561363273],
+    "photos": "https://photos.app.goo.gl"
+  }
+]

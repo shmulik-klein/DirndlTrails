@@ -1,0 +1,14 @@
+html, body, #__next {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+  }
+  
+  h1 {
+    text-align: center;
+    font-family: Arial, sans-serif;
+  }
+  
+  #map {
+    height: 100vh;
+  }
