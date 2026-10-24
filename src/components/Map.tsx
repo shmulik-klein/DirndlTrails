@@ -1,37 +1,163 @@
-import { MapContainer, TileLayer, Marker, Popup, Tooltip } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
-import { useEffect } from 'react';
+import { useEffect, useRef } from "react";
+import type { RefObject } from "react";
+import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
+import L from "leaflet";
 
-// Fix for default marker icons in Leaflet
-delete L.Icon.Default.prototype._getIconUrl;
-L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
+import {
+  difficultyMeta,
+  formatDistance,
+  formatDuration,
+  formatElevation,
+  formatHikeDate,
+} from "@/lib/format";
+import type { Hike } from "@/lib/hikeSchema";
+import "@/lib/leafletIcons";
+import "leaflet/dist/leaflet.css";
 
-const Map = ({ hikes }: { hikes: { name: string; date: string; position: [number, number]; photos: string }[] }) => {
-    const defaultCenter: [number, number] = [48.04872322130709, 11.507710066839964]; // Center of Pullach
-
-    useEffect(() => {
-        // Any map-related initialization can go here
-    }, []);
-
-    return (
-        <MapContainer center={defaultCenter} zoom={10} style={{ height: '100vh', width: '100%' }}>
-            <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            {hikes.map((hike, index) => (
-                <Marker key={index} position={hike.position}>
-                    <Popup>{hike.name}, {hike.date} <br />
-                        <a href={hike.photos}>Photos</a>
-                    </Popup>
-                </Marker>
-            ))}
-        </MapContainer>
-    );
+type Props = {
+  hikes: Hike[];
+  focusHikeId?: string | null;
 };
 
-export default Map;
+const DEFAULT_CENTER: [number, number] = [
+  48.04872322130709, 11.507710066839964,
+];
+
+function FitAllHikes({ hikes }: { hikes: Hike[] }) {
+  const map = useMap();
+  const hasFitted = useRef(false);
+
+  useEffect(() => {
+    if (hasFitted.current || hikes.length === 0) return;
+
+    hasFitted.current = true;
+    map.fitBounds(
+      L.latLngBounds(hikes.map((hike) => hike.position)),
+      { padding: [48, 48], maxZoom: 12 }
+    );
+  }, [hikes, map]);
+
+  return null;
+}
+
+function FocusHike({
+  hikes,
+  focusHikeId,
+  markerRefs,
+}: {
+  hikes: Hike[];
+  focusHikeId?: string | null;
+  markerRefs: RefObject<Record<string, L.Marker | null>>;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!focusHikeId) return;
+
+    const hike = hikes.find((entry) => entry.id === focusHikeId);
+    if (!hike) return;
+
+    map.flyTo(hike.position, Math.max(map.getZoom(), 12), { duration: 0.8 });
+
+    const timer = window.setTimeout(() => {
+      markerRefs.current?.[focusHikeId]?.openPopup();
+    }, 900);
+
+    return () => window.clearTimeout(timer);
+  }, [focusHikeId, hikes, map, markerRefs]);
+
+  return null;
+}
+
+function HikePopup({ hike }: { hike: Hike }) {
+  const difficulty = difficultyMeta[hike.difficulty] ?? difficultyMeta.moderate;
+  const stats = [
+    formatDistance(hike.distanceKm),
+    formatElevation(hike.elevationGainM),
+    formatDuration(hike.durationMin),
+  ].filter((value): value is string => Boolean(value));
+
+  return (
+    <div className="w-60 space-y-2 text-slate-800">
+      <div className="flex items-start justify-between gap-2">
+        <h2 className="text-sm font-semibold leading-snug">{hike.name}</h2>
+        <span
+          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${difficulty.badge}`}
+        >
+          {difficulty.label}
+        </span>
+      </div>
+
+      <p className="text-xs text-slate-500">{formatHikeDate(hike.date)}</p>
+
+      {stats.length > 0 ? (
+        <p className="flex flex-wrap gap-x-2 gap-y-1 text-xs font-medium text-slate-600">
+          {stats.map((stat) => (
+            <span key={stat}>{stat}</span>
+          ))}
+        </p>
+      ) : null}
+
+      {hike.description ? (
+        <p className="text-xs leading-snug text-slate-600">
+          {hike.description}
+        </p>
+      ) : null}
+
+      {hike.photos.length > 0 ? (
+        <div className="flex flex-wrap gap-x-3 gap-y-1">
+          {hike.photos.map((photo, index) => (
+            <a
+              key={photo}
+              href={photo}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-semibold text-emerald-700 underline decoration-emerald-300 underline-offset-2 hover:text-emerald-800"
+            >
+              {hike.photos.length === 1 ? "Photos" : `Photo ${index + 1}`}
+            </a>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+export default function Map({ hikes, focusHikeId }: Props) {
+  const markerRefs = useRef<Record<string, L.Marker | null>>({});
+
+  return (
+    <MapContainer
+      center={DEFAULT_CENTER}
+      zoom={10}
+      scrollWheelZoom
+      className="h-full w-full"
+    >
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+
+      <FitAllHikes hikes={hikes} />
+      <FocusHike
+        hikes={hikes}
+        focusHikeId={focusHikeId}
+        markerRefs={markerRefs}
+      />
+
+      {hikes.map((hike) => (
+        <Marker
+          key={hike.id}
+          position={hike.position}
+          ref={(marker) => {
+            markerRefs.current[hike.id] = marker;
+          }}
+        >
+          <Popup>
+            <HikePopup hike={hike} />
+          </Popup>
+        </Marker>
+      ))}
+    </MapContainer>
+  );
+}

@@ -1,14 +1,70 @@
-html, body, #__next {
-    margin: 0;
-    padding: 0;
-    height: 100%;
+@import "tailwindcss";
+
+@theme {
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+}
+
+html,
+body,
+#__next {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  @apply bg-slate-100 font-sans text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
+}
+
+/* Leaflet needs an explicit height and fights Tailwind's image reset. */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  font: inherit;
+  z-index: 0;
+}
+
+.leaflet-container img.leaflet-tile {
+  max-width: none !important;
+}
+
+.leaflet-popup-content {
+  margin: 12px 14px;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
   }
-  
-  h1 {
-    text-align: center;
-    font-family: Arial, sans-serif;
+  to {
+    opacity: 1;
   }
-  
-  #map {
-    height: 100vh;
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
   }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 180ms ease-out;
+}
+
+.animate-drawer-in {
+  animation: drawer-in 220ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-drawer-in {
+    animation: none;
+  }
+}
