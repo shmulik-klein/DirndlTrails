@@ -3,6 +3,7 @@ import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-lea
 import type L from "leaflet";
 
 import { inputClass } from "@/components/ui/Field";
+import { getMapStyleUrl } from "@/lib/useMapStyle";
 import "@/lib/leafletIcons";
 import "leaflet/dist/leaflet.css";
 
@@ -61,6 +62,7 @@ export default function CoordinatePicker({ value, onChange }: Props) {
   const [lngText, setLngText] = useState(String(roundCoordinate(value[1])));
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const apiKey = process.env.NEXT_PUBLIC_MAPTILER_KEY ?? "";
 
   useEffect(() => {
     setLatText((current) =>
@@ -149,7 +151,7 @@ export default function CoordinatePicker({ value, onChange }: Props) {
         >
           <TileLayer
             attribution='&copy; <a href="https://www.maptiler.com/copyright/" target="_blank" rel="noopener noreferrer">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url={`https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`}
+            url={getMapStyleUrl("streets", apiKey)}
             tileSize={512}
             zoomOffset={-1}
           />

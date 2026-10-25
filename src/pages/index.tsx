@@ -5,8 +5,10 @@ import type { GetServerSideProps } from "next";
 
 import { AddHikeButton } from "@/components/hikes/AddHikeButton";
 import { HikeDrawer } from "@/components/hikes/HikeDrawer";
+import { MapStyleControl } from "@/components/hikes/MapStyleControl";
 import type { Hike } from "@/lib/hikeSchema";
 import { listHikes } from "@/lib/hikeStore";
+import { useMapStyle } from "@/lib/useMapStyle";
 
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
 
@@ -28,6 +30,7 @@ export default function Home({ hikes: initialHikes }: Props) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [focusedHikeId, setFocusedHikeId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const { style, baseStyle, setStyle } = useMapStyle();
 
   useEffect(() => {
     if (!toast) return;
@@ -61,7 +64,9 @@ export default function Home({ hikes: initialHikes }: Props) {
           </h1>
         </header>
 
-        <Map hikes={hikes} focusHikeId={focusedHikeId} />
+        <Map hikes={hikes} focusHikeId={focusedHikeId} mapStyle={style} />
+
+        <MapStyleControl baseStyle={baseStyle} onChange={setStyle} />
 
         <AddHikeButton onClick={openDrawer} />
 

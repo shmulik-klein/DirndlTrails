@@ -11,12 +11,14 @@ import {
   formatHikeDate,
 } from "@/lib/format";
 import type { Hike } from "@/lib/hikeSchema";
+import { getMapStyleUrl, type MapStyle } from "@/lib/useMapStyle";
 import "@/lib/leafletIcons";
 import "leaflet/dist/leaflet.css";
 
 type Props = {
   hikes: Hike[];
   focusHikeId?: string | null;
+  mapStyle: MapStyle;
 };
 
 const DEFAULT_CENTER: [number, number] = [
@@ -123,8 +125,9 @@ function HikePopup({ hike }: { hike: Hike }) {
   );
 }
 
-export default function Map({ hikes, focusHikeId }: Props) {
+export default function Map({ hikes, focusHikeId, mapStyle }: Props) {
   const markerRefs = useRef<Record<string, L.Marker | null>>({});
+  const apiKey = process.env.NEXT_PUBLIC_MAPTILER_KEY ?? "";
 
   return (
     <MapContainer
@@ -134,8 +137,9 @@ export default function Map({ hikes, focusHikeId }: Props) {
       className="h-full w-full"
     >
       <TileLayer
+        key={mapStyle}
         attribution='&copy; <a href="https://www.maptiler.com/copyright/" target="_blank" rel="noopener noreferrer">MapTiler</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url={`https://api.maptiler.com/maps/streets-v2/{z}/{x}/{y}.png?key=${process.env.NEXT_PUBLIC_MAPTILER_KEY}`}
+        url={getMapStyleUrl(mapStyle, apiKey)}
         tileSize={512}
         zoomOffset={-1}
       />
