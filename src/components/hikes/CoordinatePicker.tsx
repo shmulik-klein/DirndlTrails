@@ -5,7 +5,6 @@ import type L from "leaflet";
 import { inputClass } from "@/components/ui/Field";
 import { getMapStyleUrl } from "@/lib/useMapStyle";
 import "@/lib/leafletIcons";
-import "leaflet/dist/leaflet.css";
 
 type Position = [number, number];
 

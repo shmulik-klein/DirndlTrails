@@ -13,7 +13,6 @@ import {
 import type { Hike } from "@/lib/hikeSchema";
 import { getMapStyleUrl, type MapStyle } from "@/lib/useMapStyle";
 import "@/lib/leafletIcons";
-import "leaflet/dist/leaflet.css";
 
 type Props = {
   hikes: Hike[];
@@ -80,9 +79,11 @@ function HikePopup({ hike }: { hike: Hike }) {
   ].filter((value): value is string => Boolean(value));
 
   return (
-    <div className="w-60 space-y-2 text-slate-800">
+    <div className="w-64 space-y-2.5 text-slate-900 dark:text-slate-100">
       <div className="flex items-start justify-between gap-2">
-        <h2 className="text-sm font-semibold leading-snug">{hike.name}</h2>
+        <h2 className="text-sm font-semibold leading-snug text-slate-900 dark:text-white">
+          {hike.name}
+        </h2>
         <span
           className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${difficulty.badge}`}
         >
@@ -90,20 +91,32 @@ function HikePopup({ hike }: { hike: Hike }) {
         </span>
       </div>
 
-      <p className="text-xs text-slate-500">{formatHikeDate(hike.date)}</p>
+      <p className="text-xs text-slate-500 dark:text-slate-400">
+        {formatHikeDate(hike.date)}
+      </p>
 
       {stats.length > 0 ? (
-        <p className="flex flex-wrap gap-x-2 gap-y-1 text-xs font-medium text-slate-600">
-          {stats.map((stat) => (
-            <span key={stat}>{stat}</span>
+        <p className="flex flex-wrap gap-x-2 gap-y-1 text-xs font-medium text-slate-600 dark:text-slate-300">
+          {stats.map((stat, index) => (
+            <span key={stat} className="flex items-center gap-2">
+              {stat}
+              {index < stats.length - 1 ? (
+                <span
+                  aria-hidden="true"
+                  className="h-1 w-1 rounded-full bg-slate-400 dark:bg-slate-500"
+                />
+              ) : null}
+            </span>
           ))}
         </p>
       ) : null}
 
       {hike.description ? (
-        <p className="text-xs leading-snug text-slate-600">
-          {hike.description}
-        </p>
+        <div className="rounded-lg bg-slate-50/90 px-3 py-2 ring-1 ring-slate-200/80 dark:bg-slate-800/50 dark:ring-slate-700/70">
+          <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
+            {hike.description}
+          </p>
+        </div>
       ) : null}
 
       {hike.photos.length > 0 ? (
@@ -114,7 +127,7 @@ function HikePopup({ hike }: { hike: Hike }) {
               href={photo}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs font-semibold text-emerald-700 underline decoration-emerald-300 underline-offset-2 hover:text-emerald-800"
+              className="text-xs font-semibold text-emerald-700 underline decoration-emerald-300 underline-offset-2 hover:text-emerald-800 dark:text-emerald-400 dark:decoration-emerald-500/40 dark:hover:text-emerald-300"
             >
               {hike.photos.length === 1 ? "Photos" : `Photo ${index + 1}`}
             </a>

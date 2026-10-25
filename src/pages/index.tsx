@@ -5,6 +5,8 @@ import type { GetServerSideProps } from "next";
 
 import { AddHikeButton } from "@/components/hikes/AddHikeButton";
 import { HikeDrawer } from "@/components/hikes/HikeDrawer";
+import { HikeListDrawer } from "@/components/hikes/HikeListDrawer";
+import { ListHikesButton } from "@/components/hikes/ListHikesButton";
 import { MapStyleControl } from "@/components/hikes/MapStyleControl";
 import type { Hike } from "@/lib/hikeSchema";
 import { listHikes } from "@/lib/hikeStore";
@@ -28,6 +30,7 @@ export const getServerSideProps: GetServerSideProps<Props> = async () => {
 export default function Home({ hikes: initialHikes }: Props) {
   const [hikes, setHikes] = useState(initialHikes);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [listOpen, setListOpen] = useState(false);
   const [focusedHikeId, setFocusedHikeId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const { style, baseStyle, setStyle } = useMapStyle();
@@ -48,6 +51,13 @@ export default function Home({ hikes: initialHikes }: Props) {
 
   const openDrawer = useCallback(() => setDrawerOpen(true), []);
   const closeDrawer = useCallback(() => setDrawerOpen(false), []);
+  const openList = useCallback(() => setListOpen(true), []);
+  const closeList = useCallback(() => setListOpen(false), []);
+
+  const handleSelectHike = useCallback((hike: Hike) => {
+    setFocusedHikeId(hike.id);
+    setToast(`Showing ${hike.name}`);
+  }, []);
 
   return (
     <>
@@ -68,7 +78,16 @@ export default function Home({ hikes: initialHikes }: Props) {
 
         <MapStyleControl baseStyle={baseStyle} onChange={setStyle} />
 
+        <ListHikesButton onClick={openList} />
         <AddHikeButton onClick={openDrawer} />
+
+        <HikeListDrawer
+          open={listOpen}
+          hikes={hikes}
+          onClose={closeList}
+          onSelectHike={handleSelectHike}
+          onAddHike={openDrawer}
+        />
 
         <HikeDrawer
           open={drawerOpen}
