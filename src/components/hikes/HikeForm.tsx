@@ -8,6 +8,7 @@ import {
   primaryButtonClass,
   secondaryButtonClass,
 } from "@/components/ui/Field";
+import { WeatherIcon } from "@/components/ui/WeatherIcon";
 import { difficultyMeta } from "@/lib/format";
 import {
   hikeFormSchema,
@@ -15,6 +16,7 @@ import {
   type Hike,
   type HikeFormValues,
 } from "@/lib/hikeSchema";
+import { weatherMeta } from "@/lib/weather";
 import { zodResolver } from "@/lib/zodResolver";
 
 import { PhotosRepeater } from "./PhotosRepeater";
@@ -50,6 +52,7 @@ const DEFAULT_VALUES: HikeFormValues = {
   name: "",
   date: todayISO(),
   difficulty: "moderate",
+  weather: undefined,
   description: "",
   distanceKm: undefined,
   elevationGainM: undefined,
@@ -57,6 +60,11 @@ const DEFAULT_VALUES: HikeFormValues = {
   position: DEFAULT_CENTER,
   photos: [],
 };
+
+const WEATHER_OPTIONS = Object.entries(weatherMeta) as [
+  keyof typeof weatherMeta,
+  (typeof weatherMeta)[keyof typeof weatherMeta],
+][];
 
 export function HikeForm({ onCreated, onCancel, onDirtyChange }: Props) {
   const {
@@ -196,6 +204,48 @@ export function HikeForm({ onCreated, onCancel, onDirtyChange }: Props) {
               />
             </Field>
           </div>
+
+          <Field label="Conditions" htmlFor="hike-weather">
+            <Controller
+              control={control}
+              name="weather"
+              render={({ field }) => (
+                <div className="space-y-2">
+                  <div
+                    role="radiogroup"
+                    aria-label="Weather conditions"
+                    className="grid grid-cols-4 gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800"
+                  >
+                    {WEATHER_OPTIONS.map(([value, meta]) => {
+                      const isActive = field.value === value;
+
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          role="radio"
+                          aria-checked={isActive}
+                          title={meta.label}
+                          onClick={() => field.onChange(isActive ? undefined : value)}
+                          className={
+                            isActive
+                              ? `flex flex-col items-center gap-1 rounded-lg px-1 py-2 text-[10px] font-semibold shadow-sm ${meta.badge}`
+                              : "flex flex-col items-center gap-1 rounded-lg px-1 py-2 text-[10px] font-medium text-slate-500 transition hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"
+                          }
+                        >
+                          <WeatherIcon weather={value} className="h-4 w-4" title={false} />
+                          <span className="truncate">{meta.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Optional — leave unselected if not recorded.
+                  </p>
+                </div>
+              )}
+            />
+          </Field>
 
           <div className="grid grid-cols-3 gap-3">
             <Field

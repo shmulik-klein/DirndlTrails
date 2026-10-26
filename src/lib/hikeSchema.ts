@@ -3,6 +3,18 @@ import { z } from "zod";
 export const difficultySchema = z.enum(["easy", "moderate", "hard"]);
 export type Difficulty = z.infer<typeof difficultySchema>;
 
+export const weatherSchema = z.enum([
+  "sunny",
+  "partly-cloudy",
+  "cloudy",
+  "fog",
+  "drizzle",
+  "rain",
+  "snow",
+  "storm",
+]);
+export type Weather = z.infer<typeof weatherSchema>;
+
 export type Position = [number, number];
 
 const positionSchema = z.tuple([
@@ -29,6 +41,7 @@ export const hikeInputSchema = z.object({
       message: "Pick a valid date",
     }),
   difficulty: difficultySchema,
+  weather: weatherSchema.optional(),
   description: z
     .string()
     .trim()

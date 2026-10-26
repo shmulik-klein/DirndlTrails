@@ -5,7 +5,9 @@ import {
   formatElevation,
   formatHikeDate,
 } from "@/lib/format";
+import { WeatherIcon } from "@/components/ui/WeatherIcon";
 import type { Hike } from "@/lib/hikeSchema";
+import { weatherMeta } from "@/lib/weather";
 
 type Props = {
   hike: Hike;
@@ -46,9 +48,18 @@ export function HikeListItem({ hike, onSelect, onRemove, removing = false }: Pro
           <h3 className="truncate text-sm font-semibold text-slate-900 dark:text-white">
             {hike.name}
           </h3>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            {formatHikeDate(hike.date)}
-          </p>
+          <div className="mt-1 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <span>{formatHikeDate(hike.date)}</span>
+            {hike.weather && weatherMeta[hike.weather] ? (
+              <span
+                className={`flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${weatherMeta[hike.weather].badge}`}
+                title={weatherMeta[hike.weather].label}
+              >
+                <WeatherIcon weather={hike.weather} className="h-3 w-3" title={false} />
+                {weatherMeta[hike.weather].label}
+              </span>
+            ) : null}
+          </div>
         </div>
         <span
           className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${difficulty.badge}`}

@@ -10,8 +10,10 @@ import {
   formatElevation,
   formatHikeDate,
 } from "@/lib/format";
+import { WeatherIcon } from "@/components/ui/WeatherIcon";
 import type { Hike } from "@/lib/hikeSchema";
 import { getMapStyleUrl, type MapStyle } from "@/lib/useMapStyle";
+import { weatherMeta } from "@/lib/weather";
 import "@/lib/leafletIcons";
 
 type Props = {
@@ -109,9 +111,17 @@ function HikePopup({
         </span>
       </div>
 
-      <p className="text-xs text-slate-500 dark:text-slate-400">
-        {formatHikeDate(hike.date)}
-      </p>
+      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+        <span>{formatHikeDate(hike.date)}</span>
+        {hike.weather && weatherMeta[hike.weather] ? (
+          <span
+            className={`flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${weatherMeta[hike.weather].badge}`}
+          >
+            <WeatherIcon weather={hike.weather} className="h-3 w-3" title={false} />
+            {weatherMeta[hike.weather].label}
+          </span>
+        ) : null}
+      </div>
 
       {stats.length > 0 ? (
         <p className="flex flex-wrap gap-x-2 gap-y-1 text-xs font-medium text-slate-600 dark:text-slate-300">
