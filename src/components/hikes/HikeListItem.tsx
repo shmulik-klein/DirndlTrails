@@ -10,9 +10,11 @@ import type { Hike } from "@/lib/hikeSchema";
 type Props = {
   hike: Hike;
   onSelect: (hike: Hike) => void;
+  onRemove: (hike: Hike) => void;
+  removing?: boolean;
 };
 
-export function HikeListItem({ hike, onSelect }: Props) {
+export function HikeListItem({ hike, onSelect, onRemove, removing = false }: Props) {
   const difficulty = difficultyMeta[hike.difficulty] ?? difficultyMeta.moderate;
   const stats = [
     formatDistance(hike.distanceKm),
@@ -20,11 +22,24 @@ export function HikeListItem({ hike, onSelect }: Props) {
     formatDuration(hike.durationMin),
   ].filter((value): value is string => Boolean(value));
 
+  const handleRemove = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    if (removing) return;
+    if (
+      window.confirm(
+        `Remove "${hike.name}" from the map? This action cannot be undone.`
+      )
+    ) {
+      onRemove(hike);
+    }
+  };
+
   return (
     <button
       type="button"
       onClick={() => onSelect(hike)}
-      className="group w-full rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-500/20 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-emerald-500/60"
+      className="group relative w-full rounded-xl border border-slate-200 bg-white p-4 pr-12 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-emerald-500/60"
+      disabled={removing}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -77,6 +92,31 @@ export function HikeListItem({ hike, onSelect }: Props) {
           →
         </span>
       </div>
+
+      <button
+        type="button"
+        onClick={handleRemove}
+        disabled={removing}
+        aria-label={`Remove ${hike.name}`}
+        className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-500 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
+      >
+        <svg
+          aria-hidden="true"
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M3 4H13M6 4V3C6 2.44772 6.44772 2 7 2H9C9.55228 2 10 2.44772 10 3V4M5 6V12M8 6V12M11 6V12M4 4L4.5 12C4.5 12.5523 4.94772 13 5.5 13H10.5C11.0523 13 11.5 12.5523 11.5 12L12 4"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
     </button>
   );
 }

@@ -80,3 +80,23 @@ export function addHike(input: HikeInput): Promise<Hike> {
   writeQueue = run.catch(() => undefined);
   return run;
 }
+
+export function removeHike(
+  id: string
+): Promise<{ deleted: boolean; id: string }> {
+  const run = writeQueue.then(async () => {
+    const hikes = await readHikes();
+    const initialLength = hikes.length;
+    const filtered = hikes.filter((hike) => hike.id !== id);
+
+    if (filtered.length === initialLength) {
+      return { deleted: false, id };
+    }
+
+    await writeHikes(filtered);
+    return { deleted: true, id };
+  });
+
+  writeQueue = run.catch(() => undefined);
+  return run;
+}

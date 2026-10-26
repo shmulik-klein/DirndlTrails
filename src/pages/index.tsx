@@ -1,6 +1,6 @@
 import Head from "next/head";
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { GetServerSideProps } from "next";
 
 import { AddHikeButton } from "@/components/hikes/AddHikeButton";
@@ -33,7 +33,13 @@ export default function Home({ hikes: initialHikes }: Props) {
   const [listOpen, setListOpen] = useState(false);
   const [focusedHikeId, setFocusedHikeId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
   const { style, baseStyle, setStyle } = useMapStyle();
+  const hikesRef = useRef(hikes);
+
+  useEffect(() => {
+    hikesRef.current = hikes;
+  }, [hikes]);
 
   useEffect(() => {
     if (!toast) return;
@@ -59,6 +65,40 @@ export default function Home({ hikes: initialHikes }: Props) {
     setToast(`Showing ${hike.name}`);
   }, []);
 
+  const handleRemoveHike = useCallback(
+    async (hike: Hike) => {
+      const previousHikes = hikesRef.current;
+      setRemovingIds((current) => new Set(current).add(hike.id));
+      setHikes((current) => current.filter((item) => item.id !== hike.id));
+      if (focusedHikeId === hike.id) {
+        setFocusedHikeId(null);
+      }
+
+      try {
+        const response = await fetch(`/api/hikes/${encodeURIComponent(hike.id)}`, {
+          method: "DELETE",
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to remove hike");
+        }
+
+        setToast(`${hike.name} removed`);
+      } catch (error) {
+        setHikes(previousHikes);
+        console.error(error);
+        setToast("Could not remove hike");
+      } finally {
+        setRemovingIds((current) => {
+          const next = new Set(current);
+          next.delete(hike.id);
+          return next;
+        });
+      }
+    },
+    [focusedHikeId]
+  );
+
   return (
     <>
       <Head>
@@ -74,7 +114,12 @@ export default function Home({ hikes: initialHikes }: Props) {
           </h1>
         </header>
 
-        <Map hikes={hikes} focusHikeId={focusedHikeId} mapStyle={style} />
+        <Map
+          hikes={hikes}
+          focusHikeId={focusedHikeId}
+          mapStyle={style}
+          onRemoveHike={handleRemoveHike}
+        />
 
         <MapStyleControl baseStyle={baseStyle} onChange={setStyle} />
 
@@ -87,6 +132,8 @@ export default function Home({ hikes: initialHikes }: Props) {
           onClose={closeList}
           onSelectHike={handleSelectHike}
           onAddHike={openDrawer}
+          onRemoveHike={handleRemoveHike}
+          removingIds={removingIds}
         />
 
         <HikeDrawer

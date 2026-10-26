@@ -18,6 +18,7 @@ type Props = {
   hikes: Hike[];
   focusHikeId?: string | null;
   mapStyle: MapStyle;
+  onRemoveHike?: (hike: Hike) => void;
 };
 
 const DEFAULT_CENTER: [number, number] = [
@@ -70,13 +71,30 @@ function FocusHike({
   return null;
 }
 
-function HikePopup({ hike }: { hike: Hike }) {
+function HikePopup({
+  hike,
+  onRemove,
+}: {
+  hike: Hike;
+  onRemove?: (hike: Hike) => void;
+}) {
   const difficulty = difficultyMeta[hike.difficulty] ?? difficultyMeta.moderate;
   const stats = [
     formatDistance(hike.distanceKm),
     formatElevation(hike.elevationGainM),
     formatDuration(hike.durationMin),
   ].filter((value): value is string => Boolean(value));
+
+  const handleRemove = () => {
+    if (!onRemove) return;
+    if (
+      window.confirm(
+        `Remove "${hike.name}" from the map? This action cannot be undone.`
+      )
+    ) {
+      onRemove(hike);
+    }
+  };
 
   return (
     <div className="w-64 space-y-2.5 text-slate-900 dark:text-slate-100">
@@ -134,11 +152,37 @@ function HikePopup({ hike }: { hike: Hike }) {
           ))}
         </div>
       ) : null}
+
+      {onRemove ? (
+        <button
+          type="button"
+          onClick={handleRemove}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-600 transition hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-300"
+        >
+          <svg
+            aria-hidden="true"
+            width="14"
+            height="14"
+            viewBox="0 0 16 16"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M3 4H13M6 4V3C6 2.44772 6.44772 2 7 2H9C9.55228 2 10 2.44772 10 3V4M5 6V12M8 6V12M11 6V12M4 4L4.5 12C4.5 12.5523 4.94772 13 5.5 13H10.5C11.0523 13 11.5 12.5523 11.5 12L12 4"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          Remove hike
+        </button>
+      ) : null}
     </div>
   );
 }
 
-export default function Map({ hikes, focusHikeId, mapStyle }: Props) {
+export default function Map({ hikes, focusHikeId, mapStyle, onRemoveHike }: Props) {
   const markerRefs = useRef<Record<string, L.Marker | null>>({});
   const apiKey = process.env.NEXT_PUBLIC_MAPTILER_KEY ?? "";
 
@@ -173,7 +217,7 @@ export default function Map({ hikes, focusHikeId, mapStyle }: Props) {
           }}
         >
           <Popup>
-            <HikePopup hike={hike} />
+            <HikePopup hike={hike} onRemove={onRemoveHike} />
           </Popup>
         </Marker>
       ))}

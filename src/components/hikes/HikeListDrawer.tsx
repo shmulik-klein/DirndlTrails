@@ -12,6 +12,8 @@ type Props = {
   onClose: () => void;
   onSelectHike: (hike: Hike) => void;
   onAddHike: () => void;
+  onRemoveHike: (hike: Hike) => Promise<void> | void;
+  removingIds?: Set<string>;
 };
 
 const FOCUSABLE_SELECTOR =
@@ -48,6 +50,8 @@ export function HikeListDrawer({
   onClose,
   onSelectHike,
   onAddHike,
+  onRemoveHike,
+  removingIds = new Set(),
 }: Props) {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortOption>("newest");
@@ -280,10 +284,13 @@ export function HikeListDrawer({
                 <HikeListItem
                   key={hike.id}
                   hike={hike}
+                  removing={removingIds.has(hike.id)}
                   onSelect={(selected) => {
+                    if (removingIds.has(selected.id)) return;
                     handleSelect(selected);
                     onClose();
                   }}
+                  onRemove={onRemoveHike}
                 />
               ))}
             </div>
