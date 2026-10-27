@@ -52,6 +52,7 @@ const DEFAULT_VALUES: HikeFormValues = {
   name: "",
   date: todayISO(),
   difficulty: "moderate",
+  status: "done",
   weather: undefined,
   description: "",
   distanceKm: undefined,
@@ -81,6 +82,7 @@ export function HikeForm({ onCreated, onCancel, onDirtyChange }: Props) {
   });
 
   const description = useWatch({ control, name: "description" }) ?? "";
+  const status = useWatch({ control, name: "status" }) ?? "done";
 
   useEffect(() => {
     onDirtyChange(isDirty);
@@ -89,6 +91,8 @@ export function HikeForm({ onCreated, onCancel, onDirtyChange }: Props) {
   const onSubmit = handleSubmit(async (values) => {
     const payload = hikeInputSchema.safeParse({
       ...values,
+      status: values.status ?? "done",
+      weather: values.status === "planned" ? undefined : values.weather,
       description: values.description?.trim() ? values.description.trim() : undefined,
       photos: values.photos.map((photo) => photo.url.trim()),
     });
@@ -132,6 +136,46 @@ export function HikeForm({ onCreated, onCancel, onDirtyChange }: Props) {
       <div className="flex-1 space-y-7 overflow-y-auto px-6 py-5">
         <section className="space-y-4">
           <h3 className="text-xs font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-400">
+            Status
+          </h3>
+
+          <Controller
+            control={control}
+            name="status"
+            render={({ field }) => (
+              <div
+                role="radiogroup"
+                aria-label="Hike status"
+                className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800"
+              >
+                {[
+                  { value: "done", label: "Done" },
+                  { value: "planned", label: "Planned" },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={field.value === option.value}
+                    onClick={() => field.onChange(option.value)}
+                    className={
+                      field.value === option.value
+                        ? option.value === "done"
+                          ? "rounded-lg bg-white px-3 py-2 text-sm font-semibold text-emerald-700 shadow-sm dark:bg-slate-700 dark:text-emerald-300"
+                          : "rounded-lg bg-white px-3 py-2 text-sm font-semibold text-sky-700 shadow-sm dark:bg-slate-700 dark:text-sky-300"
+                        : "rounded-lg px-3 py-2 text-sm font-medium text-slate-500 transition hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"
+                    }
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          />
+        </section>
+
+        <section className="space-y-4">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-400">
             Trail details
           </h3>
 
@@ -155,7 +199,7 @@ export function HikeForm({ onCreated, onCancel, onDirtyChange }: Props) {
 
           <div className="grid grid-cols-2 gap-3">
             <Field
-              label="Date hiked"
+              label={status === "planned" ? "Target date" : "Date hiked"}
               htmlFor="hike-date"
               required
               error={errors.date?.message}
@@ -205,47 +249,49 @@ export function HikeForm({ onCreated, onCancel, onDirtyChange }: Props) {
             </Field>
           </div>
 
-          <Field label="Conditions" htmlFor="hike-weather">
-            <Controller
-              control={control}
-              name="weather"
-              render={({ field }) => (
-                <div className="space-y-2">
-                  <div
-                    role="radiogroup"
-                    aria-label="Weather conditions"
-                    className="grid grid-cols-4 gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800"
-                  >
-                    {WEATHER_OPTIONS.map(([value, meta]) => {
-                      const isActive = field.value === value;
+          {status === "done" ? (
+            <Field label="Conditions" htmlFor="hike-weather">
+              <Controller
+                control={control}
+                name="weather"
+                render={({ field }) => (
+                  <div className="space-y-2">
+                    <div
+                      role="radiogroup"
+                      aria-label="Weather conditions"
+                      className="grid grid-cols-4 gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800"
+                    >
+                      {WEATHER_OPTIONS.map(([value, meta]) => {
+                        const isActive = field.value === value;
 
-                      return (
-                        <button
-                          key={value}
-                          type="button"
-                          role="radio"
-                          aria-checked={isActive}
-                          title={meta.label}
-                          onClick={() => field.onChange(isActive ? undefined : value)}
-                          className={
-                            isActive
-                              ? `flex h-16 flex-col items-center justify-center gap-1 rounded-lg px-1 text-xs font-semibold shadow-sm ${meta.badge}`
-                              : "flex h-16 flex-col items-center justify-center gap-1 rounded-lg px-1 text-xs font-medium text-slate-500 transition hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"
-                          }
-                        >
-                          <WeatherIcon weather={value} className="h-5 w-5" title={false} />
-                          <span className="truncate">{meta.label}</span>
-                        </button>
-                      );
-                    })}
+                        return (
+                          <button
+                            key={value}
+                            type="button"
+                            role="radio"
+                            aria-checked={isActive}
+                            title={meta.label}
+                            onClick={() => field.onChange(isActive ? undefined : value)}
+                            className={
+                              isActive
+                                ? `flex h-16 flex-col items-center justify-center gap-1 rounded-lg px-1 text-xs font-semibold shadow-sm ${meta.badge}`
+                                : "flex h-16 flex-col items-center justify-center gap-1 rounded-lg px-1 text-xs font-medium text-slate-500 transition hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"
+                            }
+                          >
+                            <WeatherIcon weather={value} className="h-5 w-5" title={false} />
+                            <span className="truncate">{meta.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Optional — leave unselected if not recorded.
+                    </p>
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Optional — leave unselected if not recorded.
-                  </p>
-                </div>
-              )}
-            />
-          </Field>
+                )}
+              />
+            </Field>
+          ) : null}
 
           <div className="grid grid-cols-3 gap-3">
             <Field

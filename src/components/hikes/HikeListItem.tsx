@@ -18,6 +18,7 @@ type Props = {
 
 export function HikeListItem({ hike, onSelect, onRemove, removing = false }: Props) {
   const difficulty = difficultyMeta[hike.difficulty] ?? difficultyMeta.moderate;
+  const status = hike.status ?? "done";
   const stats = [
     formatDistance(hike.distanceKm),
     formatElevation(hike.elevationGainM),
@@ -40,17 +41,28 @@ export function HikeListItem({ hike, onSelect, onRemove, removing = false }: Pro
     <button
       type="button"
       onClick={() => onSelect(hike)}
-      className="group relative w-full rounded-xl border border-slate-200 bg-white p-4 pr-12 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-md focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-emerald-500/60"
+      className={`group relative w-full rounded-xl border p-4 pr-12 text-left shadow-sm transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 disabled:cursor-not-allowed disabled:opacity-60 ${
+        status === "planned"
+          ? "border-slate-300 bg-white/80 hover:border-sky-400 hover:shadow-md focus-visible:ring-sky-500/20 dark:border-slate-700 dark:bg-slate-900/80 dark:hover:border-sky-500/60"
+          : "border-slate-200 bg-white hover:border-emerald-400 hover:shadow-md focus-visible:ring-emerald-500/20 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-emerald-500/60"
+      }`}
       disabled={removing}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="truncate text-sm font-semibold text-slate-900 dark:text-white">
-            {hike.name}
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="truncate text-sm font-semibold text-slate-900 dark:text-white">
+              {hike.name}
+            </h3>
+            {status === "planned" ? (
+              <span className="shrink-0 rounded-full bg-sky-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-700 dark:bg-sky-500/15 dark:text-sky-300">
+                Planned
+              </span>
+            ) : null}
+          </div>
           <div className="mt-1 flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-            <span>{formatHikeDate(hike.date)}</span>
-            {hike.weather && weatherMeta[hike.weather] ? (
+            <span>{status === "planned" ? `Target ${formatHikeDate(hike.date)}` : formatHikeDate(hike.date)}</span>
+            {status === "done" && hike.weather && weatherMeta[hike.weather] ? (
               <span
                 className={`flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${weatherMeta[hike.weather].badge}`}
                 title={weatherMeta[hike.weather].label}

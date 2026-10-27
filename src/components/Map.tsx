@@ -81,6 +81,7 @@ function HikePopup({
   onRemove?: (hike: Hike) => void;
 }) {
   const difficulty = difficultyMeta[hike.difficulty] ?? difficultyMeta.moderate;
+  const status = hike.status ?? "done";
   const stats = [
     formatDistance(hike.distanceKm),
     formatElevation(hike.elevationGainM),
@@ -104,11 +105,18 @@ function HikePopup({
         <h2 className="text-sm font-semibold leading-snug text-slate-900 dark:text-white">
           {hike.name}
         </h2>
-        <span
-          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${difficulty.badge}`}
-        >
-          {difficulty.label}
-        </span>
+        <div className="flex flex-col items-end gap-1">
+          <span
+            className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${difficulty.badge}`}
+          >
+            {difficulty.label}
+          </span>
+          {status === "planned" ? (
+            <span className="shrink-0 rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sky-700 dark:bg-sky-500/15 dark:text-sky-300">
+              Planned
+            </span>
+          ) : null}
+        </div>
       </div>
 
       <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
@@ -218,19 +226,24 @@ export default function Map({ hikes, focusHikeId, mapStyle, onRemoveHike }: Prop
         markerRefs={markerRefs}
       />
 
-      {hikes.map((hike) => (
-        <Marker
-          key={hike.id}
-          position={hike.position}
-          ref={(marker) => {
-            markerRefs.current[hike.id] = marker;
-          }}
-        >
-          <Popup>
-            <HikePopup hike={hike} onRemove={onRemoveHike} />
-          </Popup>
-        </Marker>
-      ))}
+      {hikes.map((hike) => {
+        const status = hike.status ?? "done";
+
+        return (
+          <Marker
+            key={hike.id}
+            position={hike.position}
+            opacity={status === "planned" ? 0.7 : 1}
+            ref={(marker) => {
+              markerRefs.current[hike.id] = marker;
+            }}
+          >
+            <Popup>
+              <HikePopup hike={hike} onRemove={onRemoveHike} />
+            </Popup>
+          </Marker>
+        );
+      })}
     </MapContainer>
   );
 }

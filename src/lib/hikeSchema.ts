@@ -15,6 +15,9 @@ export const weatherSchema = z.enum([
 ]);
 export type Weather = z.infer<typeof weatherSchema>;
 
+export const hikeStatusSchema = z.enum(["done", "planned"]);
+export type HikeStatus = z.infer<typeof hikeStatusSchema>;
+
 export type Position = [number, number];
 
 const positionSchema = z.tuple([
@@ -41,6 +44,7 @@ export const hikeInputSchema = z.object({
       message: "Pick a valid date",
     }),
   difficulty: difficultySchema,
+  status: hikeStatusSchema.default("done"),
   weather: weatherSchema.optional(),
   description: z
     .string()

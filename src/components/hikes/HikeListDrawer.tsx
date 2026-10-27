@@ -5,6 +5,7 @@ import type { Hike } from "@/lib/hikeSchema";
 import { HikeListItem } from "./HikeListItem";
 
 type SortOption = "newest" | "oldest" | "name-asc" | "name-desc" | "distance-desc";
+type FilterOption = "all" | "done" | "planned";
 
 type Props = {
   open: boolean;
@@ -55,6 +56,7 @@ export function HikeListDrawer({
 }: Props) {
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortOption>("newest");
+  const [filter, setFilter] = useState<FilterOption>("all");
   const panelRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
@@ -62,6 +64,7 @@ export function HikeListDrawer({
     if (!open) {
       setQuery("");
       setSort("newest");
+      setFilter("all");
       return;
     }
 
@@ -120,8 +123,12 @@ export function HikeListDrawer({
 
     let results = hikes;
 
+    if (filter !== "all") {
+      results = results.filter((hike) => (hike.status ?? "done") === filter);
+    }
+
     if (normalized) {
-      results = hikes.filter((hike) => getSearchText(hike).includes(normalized));
+      results = results.filter((hike) => getSearchText(hike).includes(normalized));
     }
 
     const sorted = [...results];
@@ -148,7 +155,7 @@ export function HikeListDrawer({
     });
 
     return sorted;
-  }, [hikes, query, sort]);
+  }, [hikes, query, sort, filter]);
 
   if (!open) return null;
 
@@ -194,6 +201,27 @@ export function HikeListDrawer({
           </div>
 
           <div className="mt-4 space-y-2">
+            <div className="grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+              {[
+                { value: "all", label: "All" },
+                { value: "done", label: "Done" },
+                { value: "planned", label: "Planned" },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setFilter(option.value as FilterOption)}
+                  className={
+                    filter === option.value
+                      ? "rounded-lg bg-white px-2 py-1.5 text-xs font-semibold text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white"
+                      : "rounded-lg px-2 py-1.5 text-xs font-medium text-slate-500 transition hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"
+                  }
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+
             <div className="relative">
               <svg
                 aria-hidden="true"
