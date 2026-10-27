@@ -229,11 +229,11 @@ export function HikeForm({ onCreated, onCancel, onDirtyChange }: Props) {
                           onClick={() => field.onChange(isActive ? undefined : value)}
                           className={
                             isActive
-                              ? `flex flex-col items-center gap-1 rounded-lg px-1 py-2 text-[10px] font-semibold shadow-sm ${meta.badge}`
-                              : "flex flex-col items-center gap-1 rounded-lg px-1 py-2 text-[10px] font-medium text-slate-500 transition hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"
+                              ? `flex h-16 flex-col items-center justify-center gap-1 rounded-lg px-1 text-xs font-semibold shadow-sm ${meta.badge}`
+                              : "flex h-16 flex-col items-center justify-center gap-1 rounded-lg px-1 text-xs font-medium text-slate-500 transition hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100"
                           }
                         >
-                          <WeatherIcon weather={value} className="h-4 w-4" title={false} />
+                          <WeatherIcon weather={value} className="h-5 w-5" title={false} />
                           <span className="truncate">{meta.label}</span>
                         </button>
                       );

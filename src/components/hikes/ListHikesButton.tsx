@@ -7,7 +7,7 @@ export function ListHikesButton({ onClick }: Props) {
     <button
       type="button"
       onClick={onClick}
-      className="fixed bottom-20 right-6 z-[900] inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/95 px-5 py-3 text-sm font-semibold text-slate-800 shadow-lg backdrop-blur transition hover:bg-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-400/30 active:scale-95 dark:border-slate-700/60 dark:bg-slate-900/95 dark:text-slate-100 dark:hover:bg-slate-900"
+      className="fixed bottom-20 right-6 z-[900] inline-flex h-12 items-center gap-2 rounded-full border border-slate-200 bg-white/95 px-6 text-sm font-semibold text-slate-800 shadow-lg backdrop-blur transition hover:bg-white focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-400/30 active:scale-95 dark:border-slate-700/60 dark:bg-slate-900/95 dark:text-slate-100 dark:hover:bg-slate-900"
       aria-label="View all hikes"
     >
       <svg
