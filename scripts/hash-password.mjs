@@ -6,7 +6,10 @@
  *   npm run hash-password            # prompts on the terminal
  *
  * Format must stay in sync with src/lib/auth.ts:
- *   scrypt$N$r$p$salt(base64url)$hash(base64url)
+ *   scrypt:N:r:p:salt(base64url):hash(base64url)
+ *
+ * Colons are deliberate: `$` in `.env*` values is rewritten by the
+ * dotenv-expand pass that Next.js runs, which would corrupt the hash.
  */
 import { randomBytes, scryptSync } from "node:crypto";
 import { createInterface } from "node:readline/promises";
@@ -62,7 +65,7 @@ const encoded = [
   P,
   salt.toString("base64url"),
   hash.toString("base64url"),
-].join("$");
+].join(":");
 
 console.log(`\nADMIN_PASSWORD_HASH=${encoded}\n`);
 console.log(

@@ -8,26 +8,39 @@ import { HikeDrawer } from "@/components/hikes/HikeDrawer";
 import { HikeListDrawer } from "@/components/hikes/HikeListDrawer";
 import { ListHikesButton } from "@/components/hikes/ListHikesButton";
 import { MapStyleControl } from "@/components/hikes/MapStyleControl";
+import { AuthControl } from "@/components/AuthControl";
+import { isAdminCookieHeader } from "@/lib/auth";
 import type { Hike } from "@/lib/hikeSchema";
 import { listHikes } from "@/lib/hikeStore";
+import { logger } from "@/lib/logger";
 import { useMapStyle } from "@/lib/useMapStyle";
 
 const Map = dynamic(() => import("@/components/Map"), { ssr: false });
 
 type Props = {
   hikes: Hike[];
+  isAdmin: boolean;
+  loadError: boolean;
 };
 
-export const getServerSideProps: GetServerSideProps<Props> = async () => {
+export const getServerSideProps: GetServerSideProps<Props> = async ({ req }) => {
+  const isAdmin = await isAdminCookieHeader(req.headers.cookie);
+
   try {
-    return { props: { hikes: await listHikes() } };
+    return {
+      props: { hikes: await listHikes(), isAdmin, loadError: false },
+    };
   } catch (error) {
-    console.error("Failed to load hikes", error);
-    return { props: { hikes: [] } };
+    logger.error({ err: error }, "Failed to load hikes");
+    return { props: { hikes: [], isAdmin, loadError: true } };
   }
 };
 
-export default function Home({ hikes: initialHikes }: Props) {
+export default function Home({
+  hikes: initialHikes,
+  isAdmin,
+  loadError,
+}: Props) {
   const [hikes, setHikes] = useState(initialHikes);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false);
@@ -114,33 +127,54 @@ export default function Home({ hikes: initialHikes }: Props) {
           </h1>
         </header>
 
+        <AuthControl isAdmin={isAdmin} />
+
+        {loadError ? (
+          <div
+            role="alert"
+            className="absolute left-1/2 top-20 z-[950] w-[min(90vw,32rem)] -translate-x-1/2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-lg dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200"
+          >
+            Hikes could not be loaded. Check the server logs, then{" "}
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="font-semibold underline underline-offset-2"
+            >
+              retry
+            </button>
+            .
+          </div>
+        ) : null}
+
         <Map
           hikes={hikes}
           focusHikeId={focusedHikeId}
           mapStyle={style}
-          onRemoveHike={handleRemoveHike}
+          onRemoveHike={isAdmin ? handleRemoveHike : undefined}
         />
 
         <MapStyleControl baseStyle={baseStyle} onChange={setStyle} />
 
         <ListHikesButton onClick={openList} />
-        <AddHikeButton onClick={openDrawer} />
+        {isAdmin ? <AddHikeButton onClick={openDrawer} /> : null}
 
         <HikeListDrawer
           open={listOpen}
           hikes={hikes}
           onClose={closeList}
           onSelectHike={handleSelectHike}
-          onAddHike={openDrawer}
-          onRemoveHike={handleRemoveHike}
+          onAddHike={isAdmin ? openDrawer : undefined}
+          onRemoveHike={isAdmin ? handleRemoveHike : undefined}
           removingIds={removingIds}
         />
 
-        <HikeDrawer
-          open={drawerOpen}
-          onClose={closeDrawer}
-          onCreated={handleCreated}
-        />
+        {isAdmin ? (
+          <HikeDrawer
+            open={drawerOpen}
+            onClose={closeDrawer}
+            onCreated={handleCreated}
+          />
+        ) : null}
 
         {toast ? (
           <div

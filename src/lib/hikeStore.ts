@@ -1,3 +1,4 @@
+import { constants as fsConstants } from "node:fs";
 import { promises as fs } from "node:fs";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
@@ -58,6 +59,23 @@ async function writeHikes(hikes: Hike[]): Promise<void> {
 
 export async function listHikes(): Promise<Hike[]> {
   return readHikes();
+}
+
+/** Used by the health endpoint to verify the data file is readable + writable. */
+export async function checkStore(): Promise<{
+  ok: boolean;
+  reason?: string;
+}> {
+  try {
+    await readHikes();
+    await fs.access(path.dirname(DATA_FILE), fsConstants.W_OK);
+    return { ok: true };
+  } catch (error) {
+    return {
+      ok: false,
+      reason: error instanceof Error ? error.message : "Unknown storage error",
+    };
+  }
 }
 
 // Serialize writes so two concurrent requests can't clobber each other.

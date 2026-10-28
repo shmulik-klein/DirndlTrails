@@ -12,8 +12,8 @@ type Props = {
   hikes: Hike[];
   onClose: () => void;
   onSelectHike: (hike: Hike) => void;
-  onAddHike: () => void;
-  onRemoveHike: (hike: Hike) => Promise<void> | void;
+  onAddHike?: () => void;
+  onRemoveHike?: (hike: Hike) => Promise<void> | void;
   removingIds?: Set<string>;
 };
 
@@ -297,9 +297,11 @@ export function HikeListDrawer({
               <p className="mt-1 max-w-xs text-xs text-slate-500 dark:text-slate-400">
                 {query
                   ? "Try adjusting your search terms."
-                  : "Start logging your Bavarian trails to see them here."}
+                  : onAddHike
+                    ? "Start logging your Bavarian trails to see them here."
+                    : "No hikes have been added yet."}
               </p>
-              {!query ? (
+              {!query && onAddHike ? (
                 <button
                   type="button"
                   onClick={() => {

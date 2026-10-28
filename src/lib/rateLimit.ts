@@ -1,5 +1,7 @@
 import type { NextApiRequest } from "next";
 
+import { getServerEnv } from "./env";
+
 type Bucket = {
   count: number;
   resetAt: number;
@@ -57,12 +59,16 @@ function pruneExpired(now: number): void {
 }
 
 export function clientIp(req: NextApiRequest): string {
-  const forwarded = req.headers["x-forwarded-for"];
-  const header = Array.isArray(forwarded) ? forwarded[0] : forwarded;
+  const env = getServerEnv();
 
-  if (header) {
-    const first = header.split(",")[0]?.trim();
-    if (first) return first;
+  if (env.TRUST_PROXY) {
+    const forwarded = req.headers["x-forwarded-for"];
+    const header = Array.isArray(forwarded) ? forwarded[0] : forwarded;
+
+    if (header) {
+      const first = header.split(",")[0]?.trim();
+      if (first) return first;
+    }
   }
 
   return req.socket?.remoteAddress ?? "unknown";

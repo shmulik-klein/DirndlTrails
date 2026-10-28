@@ -10,7 +10,7 @@ import { promisify } from "node:util";
 import { SignJWT, jwtVerify } from "jose";
 import type { NextApiRequest, NextApiResponse } from "next";
 
-import { getServerEnv, isProduction } from "./env";
+import { getServerEnv, isProduction, PASSWORD_HASH_FORMAT } from "./env";
 
 const scrypt = promisify(scryptCallback) as (
   password: string | Buffer,
@@ -37,11 +37,15 @@ function scryptOptions(): ScryptOptions {
   return { N: SCRYPT_N, r: SCRYPT_R, p: SCRYPT_P, maxmem: MAX_MEM };
 }
 
-/** Encodes `scrypt$N$r$p$salt$hash` (base64url). */
-export async function hashPassword(password: string): Promise<string> {
-  const salt = randomBytes(SALT_LENGTH);
-  const derived = await scrypt(password, salt, KEY_LENGTH, scryptOptions());
-
+/**
+ * Encodes `scrypt:N:r:p:salt:hash` (N/r/p decimal, salt/hash base64url).
+ *
+ * Colons are used instead of the more common `$` separators because Next.js
+ * runs `dotenv-expand` over `.env*` files: a `$`-separated hash would be
+ * silently rewritten (`$32768` is treated as a variable reference) before it
+ * ever reaches the app.
+ */
+function encodeHash(salt: Buffer, derived: Buffer): string {
   return [
     HASH_PREFIX,
     SCRYPT_N,
@@ -49,7 +53,14 @@ export async function hashPassword(password: string): Promise<string> {
     SCRYPT_P,
     salt.toString("base64url"),
     derived.toString("base64url"),
-  ].join("$");
+  ].join(":");
+}
+
+export async function hashPassword(password: string): Promise<string> {
+  const salt = randomBytes(SALT_LENGTH);
+  const derived = await scrypt(password, salt, KEY_LENGTH, scryptOptions());
+
+  return encodeHash(salt, derived);
 }
 
 /** Synchronous variant used by the CLI helper (`npm run hash-password`). */
@@ -57,14 +68,7 @@ export function hashPasswordSync(password: string): string {
   const salt = randomBytes(SALT_LENGTH);
   const derived = scryptSync(password, salt, KEY_LENGTH, scryptOptions());
 
-  return [
-    HASH_PREFIX,
-    SCRYPT_N,
-    SCRYPT_R,
-    SCRYPT_P,
-    salt.toString("base64url"),
-    derived.toString("base64url"),
-  ].join("$");
+  return encodeHash(salt, derived);
 }
 
 type ParsedHash = {
@@ -76,7 +80,9 @@ type ParsedHash = {
 };
 
 function parsePasswordHash(stored: string): ParsedHash | null {
-  const parts = stored.split("$");
+  if (!PASSWORD_HASH_FORMAT.test(stored)) return null;
+
+  const parts = stored.split(":");
   if (parts.length !== 6 || parts[0] !== HASH_PREFIX) return null;
 
   const n = Number(parts[1]);
@@ -185,6 +191,20 @@ export function createSessionCookie(token: string): SessionCookie {
       maxAge: SESSION_MAX_AGE_SECONDS,
     },
   };
+}
+
+export function serializeSessionCookie(cookie: SessionCookie): string {
+  const parts = [
+    `${cookie.name}=${encodeURIComponent(cookie.value)}`,
+    `Path=${cookie.options.path}`,
+    `Max-Age=${cookie.options.maxAge}`,
+    `SameSite=Lax`,
+    "HttpOnly",
+  ];
+
+  if (cookie.options.secure) parts.push("Secure");
+
+  return parts.join("; ");
 }
 
 export function createExpiredSessionCookie(): SessionCookie {
