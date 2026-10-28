@@ -1,25 +1,9 @@
 [
   {
-    "name": "Riederstein",
-    "date": "2025-04-21",
-    "difficulty": "moderate",
-    "description": "A steady climb from Tegernsee with a rewarding view over the lake from the summit cross.",
-    "distanceKm": 8.5,
-    "elevationGainM": 620,
-    "durationMin": 210,
-    "position": [
-      47.704626651798584,
-      11.79285473068271
-    ],
-    "photos": [
-      "https://photos.app.goo.gl"
-    ],
-    "id": "3f2a8c1e-9b4d-4c7a-8e21-1a2b3c4d5e6f"
-  },
-  {
     "name": "Hackensee",
     "date": "2025-03-23",
     "difficulty": "easy",
+    "status": "done",
     "description": "A relaxed loop around a quiet lake, perfect for an early spring morning.",
     "distanceKm": 5.2,
     "elevationGainM": 180,
@@ -37,6 +21,7 @@
     "name": "Am Bayersoiener See",
     "date": "2024-08-15",
     "difficulty": "easy",
+    "status": "done",
     "description": "Flat lakeside paths with plenty of shade and spots to swim.",
     "distanceKm": 4,
     "elevationGainM": 90,
