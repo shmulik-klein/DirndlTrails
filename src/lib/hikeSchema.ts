@@ -22,11 +22,11 @@ export type Position = [number, number];
 
 const positionSchema = z.tuple([
   z
-    .number({ invalid_type_error: "Enter a valid latitude" })
+    .number({ error: "Enter a valid latitude" })
     .min(-90, "Latitude must be between -90 and 90")
     .max(90, "Latitude must be between -90 and 90"),
   z
-    .number({ invalid_type_error: "Enter a valid longitude" })
+    .number({ error: "Enter a valid longitude" })
     .min(-180, "Longitude must be between -180 and 180")
     .max(180, "Longitude must be between -180 and 180"),
 ]) as unknown as z.ZodType<Position>;
@@ -52,18 +52,18 @@ export const hikeInputSchema = z.object({
     .max(2000, "Keep the description under 2000 characters")
     .optional(),
   distanceKm: z
-    .number({ invalid_type_error: "Enter a number" })
+    .number({ error: "Enter a number" })
     .positive("Distance must be greater than 0")
     .max(1000, "That distance seems too large")
     .optional(),
   elevationGainM: z
-    .number({ invalid_type_error: "Enter a number" })
+    .number({ error: "Enter a number" })
     .int("Use whole metres")
     .nonnegative("Elevation cannot be negative")
     .max(10000, "That elevation seems too large")
     .optional(),
   durationMin: z
-    .number({ invalid_type_error: "Enter a number" })
+    .number({ error: "Enter a number" })
     .int("Use whole minutes")
     .positive("Duration must be greater than 0")
     .max(10000, "That duration seems too large")

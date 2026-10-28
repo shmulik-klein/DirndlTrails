@@ -57,16 +57,23 @@ export function HikeListDrawer({
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<SortOption>("newest");
   const [filter, setFilter] = useState<FilterOption>("all");
+  const [wasOpen, setWasOpen] = useState(open);
   const panelRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
+  // Reset filters when the drawer closes. Adjusting state during render is the
+  // React-recommended alternative to a prop-syncing side effect.
+  if (open !== wasOpen) {
+    setWasOpen(open);
     if (!open) {
       setQuery("");
       setSort("newest");
       setFilter("all");
-      return;
     }
+  }
+
+  useEffect(() => {
+    if (!open) return;
 
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";

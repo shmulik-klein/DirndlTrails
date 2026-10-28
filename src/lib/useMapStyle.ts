@@ -53,10 +53,7 @@ function isAnyMapStyle(style: string | null): style is MapStyle {
   );
 }
 
-function resolveBaseStyle(
-  stored: string | null,
-  prefersDark: boolean
-): BaseMapStyle {
+function resolveBaseStyle(stored: string | null): BaseMapStyle {
   if (isBaseStyle(stored)) {
     return stored;
   }
@@ -66,7 +63,7 @@ function resolveBaseStyle(
   if (stored === "topo-dark") return "topo";
   if (stored === "outdoor-dark") return "outdoor";
 
-  return prefersDark ? "streets" : "streets";
+  return "streets";
 }
 
 function toResolvedStyle(base: BaseMapStyle, prefersDark: boolean): MapStyle {
@@ -77,7 +74,7 @@ export function useMapStyle() {
   const [baseStyle, setBaseStyleState] = useState<BaseMapStyle>(() => {
     if (typeof window === "undefined") return "streets";
     const stored = window.localStorage.getItem(STORAGE_KEY);
-    return resolveBaseStyle(stored, getSystemPrefersDark());
+    return resolveBaseStyle(stored);
   });
   const [hasOverride, setHasOverride] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
@@ -95,7 +92,6 @@ export function useMapStyle() {
       setPrefersDark(event.matches);
     };
 
-    setPrefersDark(mediaQuery.matches);
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
@@ -126,7 +122,7 @@ export function useMapStyle() {
   };
 
   const resetToSystem = () => {
-    setBaseStyleState(resolveBaseStyle(null, getSystemPrefersDark()));
+    setBaseStyleState(resolveBaseStyle(null));
     setHasOverride(false);
 
     if (typeof window !== "undefined") {

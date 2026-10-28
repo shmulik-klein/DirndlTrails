@@ -59,25 +59,29 @@ function ClickToPlace({ onPick }: { onPick: (position: Position) => void }) {
 export default function CoordinatePicker({ value, onChange }: Props) {
   const [latText, setLatText] = useState(String(roundCoordinate(value[0])));
   const [lngText, setLngText] = useState(String(roundCoordinate(value[1])));
+  const [syncedValue, setSyncedValue] = useState<Position>(value);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const apiKey = process.env.NEXT_PUBLIC_MAPTILER_KEY ?? "";
 
-  useEffect(() => {
-    setLatText((current) =>
-      current.trim() !== "" && Number(current) === roundCoordinate(value[0])
-        ? current
-        : String(roundCoordinate(value[0]))
-    );
-  }, [value]);
+  // Keep the text inputs in sync when the pin moves (map click, drag, or
+  // geolocation). Adjusting state during render avoids a prop-syncing effect.
+  const roundedLat = roundCoordinate(value[0]);
+  const roundedLng = roundCoordinate(value[1]);
 
-  useEffect(() => {
-    setLngText((current) =>
-      current.trim() !== "" && Number(current) === roundCoordinate(value[1])
+  if (roundedLat !== syncedValue[0] || roundedLng !== syncedValue[1]) {
+    setSyncedValue([roundedLat, roundedLng]);
+    setLatText((current) =>
+      current.trim() !== "" && Number(current) === roundedLat
         ? current
-        : String(roundCoordinate(value[1]))
+        : String(roundedLat)
     );
-  }, [value]);
+    setLngText((current) =>
+      current.trim() !== "" && Number(current) === roundedLng
+        ? current
+        : String(roundedLng)
+    );
+  }
 
   const parsedLat = Number(latText);
   const parsedLng = Number(lngText);

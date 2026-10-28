@@ -15,8 +15,15 @@ const FOCUSABLE_SELECTOR =
 
 export function HikeDrawer({ open, onClose, onCreated }: Props) {
   const [dirty, setDirty] = useState(false);
+  const [wasOpen, setWasOpen] = useState(open);
   const dirtyRef = useRef(dirty);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  // Reset the dirty flag when the drawer closes (render-time adjustment).
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (!open) setDirty(false);
+  }
 
   useEffect(() => {
     dirtyRef.current = dirty;
@@ -80,10 +87,6 @@ export function HikeDrawer({ open, onClose, onCreated }: Props) {
       window.clearTimeout(focusTimer);
     };
   }, [open, requestClose]);
-
-  useEffect(() => {
-    if (!open) setDirty(false);
-  }, [open]);
 
   if (!open) return null;
 
