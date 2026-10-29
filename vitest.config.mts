@@ -6,6 +6,9 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.{ts,tsx}"],
+    env: {
+      LOG_LEVEL: "silent",
+    },
     coverage: {
       provider: "v8",
       include: ["src/lib/**"],

@@ -95,6 +95,8 @@ data/*.json
 !data/hikes.seed.json
 data/*.tmp
 data/*.invalid.json
+data/.store.lock*
+data/quarantine/
 
 # Tests and coverage
 coverage

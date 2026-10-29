@@ -27,6 +27,9 @@ const serverEnvSchema = z.object({
       "ADMIN_PASSWORD_HASH must look like scrypt:N:r:p:salt:hash — regenerate it with `npm run hash-password` (values containing `$` are rewritten by Next.js)"
     ),
   DATA_DIR: z.string().min(1).default("./data"),
+  // Optional override for the bootstrap seed file (containers bake a seed
+  // outside the mounted data volume).
+  SEED_FILE: z.string().optional(),
   APP_ORIGIN: z.url("APP_ORIGIN must be an absolute URL"),
   LOG_LEVEL: z
     .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
