@@ -1,5 +1,9 @@
 # Deploying DirndlTrails
 
+> Running the app on your machine instead? See the
+> [main README](../README.md#quick-start-local-development) for local
+> development (`npm run dev`) and single-container Docker usage.
+
 Runs two containers on a single host:
 
 - **app** — the Next.js server (non-root, uid 1001) on an internal network
@@ -16,6 +20,9 @@ image (`data/hikes.seed.json`).
 - Inbound TCP 80 and 443 (and UDP 443 for HTTP/3) open in the firewall
 - Nothing else listening on 80/443
 
+Node.js is not needed on the host; it is only used to generate the password
+hash (the container fallback below avoids it entirely).
+
 Caddy obtains and renews the certificate automatically. Set `DOMAIN` to the
 public hostname and `APP_ORIGIN` to the same value with `https://`.
 
@@ -27,11 +34,15 @@ cd DirndlTrails
 
 cp .env.production.example .env.production
 chmod 600 .env.production
-$EDITOR .env.production
 
-# Generate the two secrets:
+# Generate the two secrets, then paste them into .env.production:
 openssl rand -base64 48          # -> SESSION_SECRET
 npm run hash-password -- "a long unique admin passphrase"   # -> ADMIN_PASSWORD_HASH
+
+$EDITOR .env.production
+
+# Checks that every ${...} variable resolves and the build args are valid.
+docker compose --env-file .env.production config > /dev/null
 
 docker compose --env-file .env.production up -d --build
 ```
@@ -57,6 +68,23 @@ add or remove hikes; visitors get the read-only map.
 
 > **Single instance only.** Rate limiting is in-memory and the store uses a
 > file lock. Do not run more than one `app` replica against the same volume.
+
+## Common operations
+
+Always pass `--env-file .env.production`; compose needs it for `${DOMAIN}` and
+the MapTiler build arg.
+
+```bash
+docker compose --env-file .env.production ps            # status + health
+docker compose --env-file .env.production logs -f app   # follow app logs
+docker compose --env-file .env.production restart app   # after config changes
+docker compose --env-file .env.production stop          # stop, keep volumes
+docker compose --env-file .env.production down          # remove containers, keep volumes
+```
+
+`down -v` deletes the `dirndltrails_data` volume and with it every hike — take a
+backup first. Starting only the app (`up -d app`) does not publish a port, so
+the site is unreachable without Caddy; start the whole stack.
 
 ## Updating
 
@@ -136,12 +164,17 @@ docker run --rm -p 3000:3000 \
   -e SESSION_SECRET="$(openssl rand -base64 48)" \
   -e ADMIN_PASSWORD_HASH="$(node scripts/hash-password.mjs 'local-test-password' | sed -n 's/^ADMIN_PASSWORD_HASH=//p')" \
   -e APP_ORIGIN="http://localhost:3000" \
+  -e DATA_DIR=/data \
   -v dirndltrails-test-data:/data \
   dirndltrails:test
+
+# In another shell:
+curl -fsS http://localhost:3000/api/health
 ```
 
 `Secure` session cookies mean browsers will not keep the login over plain
 HTTP; test sign-in behind HTTPS (or through a TLS terminator) in production.
+Anonymous reads, the health endpoint, and the seed bootstrap all work over HTTP.
 
 ## Hardening checklist
 
