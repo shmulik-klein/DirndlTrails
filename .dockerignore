@@ -1,0 +1,34 @@
+node_modules
+**/node_modules
+
+.next
+next-env.d.ts
+tsconfig.tsbuildinfo
+
+.git
+.github
+.gitignore
+.editorconfig
+.nvmrc
+
+# Secrets and local config are injected at runtime.
+.env*
+!.env.example
+!.env.production.example
+
+# Runtime data; only the baked seed belongs in the image.
+data/*
+!data/hikes.seed.json
+
+coverage
+test-results
+playwright-report
+blob-report
+backups
+
+*.log
+npm-debug.log*
+
+Dockerfile
+.dockerignore
+docker-compose.yml

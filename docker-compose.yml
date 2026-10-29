@@ -1,0 +1,66 @@
+name: dirndltrails
+
+services:
+  app:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_MAPTILER_KEY: ${NEXT_PUBLIC_MAPTILER_KEY:?Set NEXT_PUBLIC_MAPTILER_KEY in .env.production}
+        NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+    image: dirndltrails:latest
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      DATA_DIR: /data
+      TRUST_PROXY: "true"
+    volumes:
+      - data:/data
+    expose:
+      - "3000"
+    networks:
+      - internal
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  caddy:
+    image: caddy:2.10-alpine
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN in .env.production}
+      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL in .env.production}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - internal
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  # Hike data lives here. Named volume so first-run ownership comes from the
+  # image (uid 1001). For a bind mount, chown the host directory to 1001:1001.
+  data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  internal:

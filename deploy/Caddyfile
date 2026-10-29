@@ -1,0 +1,22 @@
+{
+	email {$ACME_EMAIL}
+
+	# Keep certificate state and logs predictable in containers.
+	admin off
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	reverse_proxy app:3000
+
+	# The app sets CSP, HSTS, and the other security headers itself.
+	header {
+		-Server
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}
