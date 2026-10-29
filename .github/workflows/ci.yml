@@ -1,0 +1,158 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Lint, types, tests, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test -- --coverage
+
+      - name: Production build
+        run: npm run build
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  docker:
+    name: Build and smoke-test image
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: dirndltrails:ci
+          build-args: |
+            NEXT_PUBLIC_MAPTILER_KEY=ci-placeholder
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Start container
+        run: |
+          set -euo pipefail
+
+          SESSION_SECRET="$(openssl rand -base64 48)"
+          ADMIN_PASSWORD_HASH="$(node scripts/hash-password.mjs 'ci-smoke-test-password' | sed -n 's/^ADMIN_PASSWORD_HASH=//p')"
+
+          docker run -d --name dt-ci -p 3010:3000 \
+            -e SESSION_SECRET="$SESSION_SECRET" \
+            -e ADMIN_PASSWORD_HASH="$ADMIN_PASSWORD_HASH" \
+            -e APP_ORIGIN="http://localhost:3010" \
+            -e DATA_DIR=/data \
+            -e LOG_LEVEL=warn \
+            -v dt-ci-data:/data \
+            dirndltrails:ci
+
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:3010/api/health > /tmp/health.json 2>/dev/null; then
+              break
+            fi
+            if [ "$attempt" = 60 ]; then
+              echo "health endpoint never became ready" >&2
+              exit 1
+            fi
+            sleep 1
+          done
+
+          cat /tmp/health.json
+          grep -q '"status":"ok"' /tmp/health.json
+
+      - name: Smoke test seeded data and auth
+        run: |
+          set -euo pipefail
+
+          docker exec dt-ci node -e '
+            const hikes = require("/data/hikes.json");
+            if (hikes.length !== 3) {
+              console.error("expected 3 seeded hikes, got", hikes.length);
+              process.exit(1);
+            }
+          '
+
+          curl -fsS http://127.0.0.1:3010/ -o /tmp/home.html
+          grep -q "Sign in" /tmp/home.html
+          if grep -q "Add hike" /tmp/home.html; then
+            echo "signed-out page must not offer Add hike" >&2
+            exit 1
+          fi
+
+          code="$(curl -s -o /dev/null -w '%{http_code}' \
+            -X POST -H 'Content-Type: application/json' -d '{}' \
+            http://127.0.0.1:3010/api/hikes)"
+          test "$code" = "401" || { echo "expected 401 for anonymous write, got $code" >&2; exit 1; }
+
+          code="$(curl -s -o /dev/null -w '%{http_code}' \
+            -X POST -H 'Content-Type: application/json' \
+            -H 'Origin: http://localhost:3010' \
+            -d '{"password":"ci-smoke-test-password"}' \
+            http://127.0.0.1:3010/api/auth/login)"
+          test "$code" = "200" || { echo "expected 200 for login, got $code" >&2; exit 1; }
+
+      - name: Container logs
+        if: failure()
+        run: docker logs dt-ci || true
+
+      - name: Remove container
+        if: always()
+        run: docker rm -f dt-ci || true
+
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high

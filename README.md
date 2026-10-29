@@ -1,5 +1,7 @@
 # DirndlTrails ![image](https://github.com/user-attachments/assets/e399dfbc-fe88-48da-b4d3-5987d5e4bbfe)
 
+[![CI](https://github.com/shmulik-klein/DirndlTrails/actions/workflows/ci.yml/badge.svg)](https://github.com/shmulik-klein/DirndlTrails/actions/workflows/ci.yml)
+
 A Next.js app that plots hiking trails in Bavaria on an interactive Leaflet map.
 
 ## Getting started
@@ -71,6 +73,23 @@ updates, backups and restore, bind-mount permissions and hardening checklist.
 cp .env.production.example .env.production   # fill in DOMAIN, secrets, MapTiler key
 docker compose --env-file .env.production up -d --build
 ```
+
+## Continuous integration
+
+`.github/workflows/ci.yml` runs on pushes to `main` and on pull requests:
+
+- **verify** — lint, typecheck, unit tests with coverage, production build, and
+  `npm audit --omit=dev`
+- **docker** — builds the image and smoke-tests it: health endpoint, seeded
+  data, signed-out UI, rejected anonymous writes, admin login
+- **dependency review** — fails a PR that introduces a high-severity
+  vulnerable dependency (pull requests only)
+
+Dependabot opens weekly grouped PRs for npm, GitHub Actions, and Docker base
+images. Next.js/React majors are intentionally left for manual upgrades. To
+require green checks before merging, enable branch protection for `main` and
+select **Lint, types, tests, build** and **Build and smoke-test image** as
+required status checks.
 
 ## Project layout
 
