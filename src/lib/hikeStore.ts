@@ -455,6 +455,32 @@ export function removeHike(
   return run;
 }
 
+export function updateHike(id: string, input: HikeInput): Promise<Hike | null> {
+  const updated: Hike = {
+    ...input,
+    photos: input.photos ?? [],
+    id,
+  };
+
+  const run = writeQueue.then(() =>
+    updateHikes((hikes) => {
+      const index = hikes.findIndex((hike) => hike.id === id);
+
+      if (index === -1) {
+        return { result: null };
+      }
+
+      const next = [...hikes];
+      next[index] = updated;
+
+      return { hikes: next, result: updated };
+    })
+  );
+
+  writeQueue = run.catch(() => undefined);
+  return run;
+}
+
 /** Test helper: forget in-process caches after changing `DATA_DIR`/`SEED_FILE`. */
 export function resetStoreStateForTests(): void {
   writeQueue = Promise.resolve();

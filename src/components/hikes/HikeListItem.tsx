@@ -13,10 +13,11 @@ type Props = {
   hike: Hike;
   onSelect: (hike: Hike) => void;
   onRemove?: (hike: Hike) => void;
+  onEdit?: (hike: Hike) => void;
   removing?: boolean;
 };
 
-export function HikeListItem({ hike, onSelect, onRemove, removing = false }: Props) {
+export function HikeListItem({ hike, onSelect, onRemove, onEdit, removing = false }: Props) {
   const difficulty = difficultyMeta[hike.difficulty] ?? difficultyMeta.moderate;
   const status = hike.status ?? "done";
   const stats = [
@@ -35,6 +36,12 @@ export function HikeListItem({ hike, onSelect, onRemove, removing = false }: Pro
     ) {
       onRemove(hike);
     }
+  };
+
+  const handleEdit = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    if (removing || !onEdit) return;
+    onEdit(hike);
   };
 
   return (
@@ -125,31 +132,61 @@ export function HikeListItem({ hike, onSelect, onRemove, removing = false }: Pro
         </div>
       </div>
 
-      {onRemove ? (
-        <button
-          type="button"
-          onClick={handleRemove}
-          disabled={removing}
-          aria-label={`Remove ${hike.name}`}
-          className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-500 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
-        >
-          <svg
-            aria-hidden="true"
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M3 4H13M6 4V3C6 2.44772 6.44772 2 7 2H9C9.55228 2 10 2.44772 10 3V4M5 6V12M8 6V12M11 6V12M4 4L4.5 12C4.5 12.5523 4.94772 13 5.5 13H10.5C11.0523 13 11.5 12.5523 11.5 12L12 4"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
+      {(onEdit || onRemove) ? (
+        <div className="absolute right-3 top-3 z-10 flex items-center gap-1">
+          {onEdit ? (
+            <button
+              type="button"
+              onClick={handleEdit}
+              disabled={removing}
+              aria-label={`Edit ${hike.name}`}
+              className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-400/20 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            >
+              <svg
+                aria-hidden="true"
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M11.333 2.00004C11.5084 1.82474 11.7163 1.68605 11.9447 1.59203C12.1731 1.498 12.4173 1.45056 12.6637 1.4528C12.91 1.45503 13.1532 1.50689 13.3797 1.60532C13.6061 1.70374 13.8113 1.84678 13.9833 2.02574C14.1552 2.20469 14.2906 2.41545 14.3811 2.64548C14.4716 2.87552 14.5155 3.12024 14.5102 3.3665C14.5049 3.61276 14.4505 3.85539 14.3502 4.08037C14.2499 4.30535 14.1059 4.50815 13.9273 4.67671L5.27933 13.3247L1.66699 14.3334L2.67566 10.721L11.333 2.00004Z"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          ) : null}
+          {onRemove ? (
+            <button
+              type="button"
+              onClick={handleRemove}
+              disabled={removing}
+              aria-label={`Remove ${hike.name}`}
+              className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-rose-500/20 disabled:cursor-not-allowed disabled:opacity-40 dark:text-slate-500 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
+            >
+              <svg
+                aria-hidden="true"
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M3 4H13M6 4V3C6 2.44772 6.44772 2 7 2H9C9.55228 2 10 2.44772 10 3V4M5 6V12M8 6V12M11 6V12M4 4L4.5 12C4.5 12.5523 4.94772 13 5.5 13H10.5C11.0523 13 11.5 12.5523 11.5 12L12 4"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );

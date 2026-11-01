@@ -44,6 +44,7 @@ export default function Home({
   const [hikes, setHikes] = useState(initialHikes);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false);
+  const [editingHike, setEditingHike] = useState<Hike | null>(null);
   const [focusedHikeId, setFocusedHikeId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
@@ -62,20 +63,38 @@ export default function Home({
   }, [toast]);
 
   const handleCreated = useCallback((hike: Hike) => {
-    setHikes((current) => [...current, hike]);
+    setHikes((current) => {
+      const existing = current.find((item) => item.id === hike.id);
+      if (existing) {
+        return current.map((item) => (item.id === hike.id ? hike : item));
+      }
+      return [...current, hike];
+    });
     setFocusedHikeId(hike.id);
     setDrawerOpen(false);
-    setToast(`${hike.name} added to the map`);
-  }, []);
+    setEditingHike(null);
+    setToast(editingHike ? `${hike.name} updated` : `${hike.name} added to the map`);
+  }, [editingHike]);
 
-  const openDrawer = useCallback(() => setDrawerOpen(true), []);
-  const closeDrawer = useCallback(() => setDrawerOpen(false), []);
+  const openDrawer = useCallback(() => {
+    setEditingHike(null);
+    setDrawerOpen(true);
+  }, []);
+  const closeDrawer = useCallback(() => {
+    setDrawerOpen(false);
+    setEditingHike(null);
+  }, []);
   const openList = useCallback(() => setListOpen(true), []);
   const closeList = useCallback(() => setListOpen(false), []);
 
   const handleSelectHike = useCallback((hike: Hike) => {
     setFocusedHikeId(hike.id);
     setToast(`Showing ${hike.name}`);
+  }, []);
+
+  const handleEditHike = useCallback((hike: Hike) => {
+    setEditingHike(hike);
+    setDrawerOpen(true);
   }, []);
 
   const handleRemoveHike = useCallback(
@@ -151,6 +170,7 @@ export default function Home({
           focusHikeId={focusedHikeId}
           mapStyle={style}
           onRemoveHike={isAdmin ? handleRemoveHike : undefined}
+          onEditHike={isAdmin ? handleEditHike : undefined}
         />
 
         <MapStyleControl baseStyle={baseStyle} onChange={setStyle} />
@@ -164,6 +184,7 @@ export default function Home({
           onClose={closeList}
           onSelectHike={handleSelectHike}
           onAddHike={isAdmin ? openDrawer : undefined}
+          onEditHike={isAdmin ? handleEditHike : undefined}
           onRemoveHike={isAdmin ? handleRemoveHike : undefined}
           removingIds={removingIds}
         />
@@ -173,6 +194,7 @@ export default function Home({
             open={drawerOpen}
             onClose={closeDrawer}
             onCreated={handleCreated}
+            hike={editingHike}
           />
         ) : null}
 

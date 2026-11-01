@@ -13,6 +13,7 @@ type Props = {
   onClose: () => void;
   onSelectHike: (hike: Hike) => void;
   onAddHike?: () => void;
+  onEditHike?: (hike: Hike) => void;
   onRemoveHike?: (hike: Hike) => Promise<void> | void;
   removingIds?: Set<string>;
 };
@@ -51,6 +52,7 @@ export function HikeListDrawer({
   onClose,
   onSelectHike,
   onAddHike,
+  onEditHike,
   onRemoveHike,
   removingIds = new Set(),
 }: Props) {
@@ -327,6 +329,7 @@ export function HikeListDrawer({
                     handleSelect(selected);
                     onClose();
                   }}
+                  onEdit={onEditHike ? (entry) => { onEditHike(entry); onClose(); } : undefined}
                   onRemove={onRemoveHike}
                 />
               ))}

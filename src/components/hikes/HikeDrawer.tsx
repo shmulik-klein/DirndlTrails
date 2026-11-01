@@ -8,16 +8,18 @@ type Props = {
   open: boolean;
   onClose: () => void;
   onCreated: (hike: Hike) => void;
+  hike?: Hike | null;
 };
 
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-export function HikeDrawer({ open, onClose, onCreated }: Props) {
+export function HikeDrawer({ open, onClose, onCreated, hike = null }: Props) {
   const [dirty, setDirty] = useState(false);
   const [wasOpen, setWasOpen] = useState(open);
   const dirtyRef = useRef(dirty);
   const panelRef = useRef<HTMLDivElement>(null);
+  const isEdit = Boolean(hike);
 
   // Reset the dirty flag when the drawer closes (render-time adjustment).
   if (open !== wasOpen) {
@@ -32,13 +34,17 @@ export function HikeDrawer({ open, onClose, onCreated }: Props) {
   const requestClose = useCallback(() => {
     if (
       dirtyRef.current &&
-      !window.confirm("You have unsaved changes. Discard this hike?")
+      !window.confirm(
+        isEdit
+          ? "You have unsaved changes. Discard your edits?"
+          : "You have unsaved changes. Discard this hike?"
+      )
     ) {
       return;
     }
 
     onClose();
-  }, [onClose]);
+  }, [isEdit, onClose]);
 
   useEffect(() => {
     if (!open) return;
@@ -94,7 +100,7 @@ export function HikeDrawer({ open, onClose, onCreated }: Props) {
     <div className="fixed inset-0 z-[1000]">
       <button
         type="button"
-        aria-label="Close add hike panel"
+        aria-label={isEdit ? "Close edit hike panel" : "Close add hike panel"}
         tabIndex={-1}
         onClick={requestClose}
         className="absolute inset-0 h-full w-full animate-fade-in cursor-default bg-slate-900/40 backdrop-blur-[2px]"
@@ -113,10 +119,12 @@ export function HikeDrawer({ open, onClose, onCreated }: Props) {
               id="hike-drawer-title"
               className="text-lg font-semibold text-slate-900 dark:text-white"
             >
-              Add a hike
+              {isEdit ? "Edit hike" : "Add a hike"}
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Trail details, a pin on the map, and a few photos.
+              {isEdit
+                ? "Update trail details, location, or photos."
+                : "Trail details, a pin on the map, and a few photos."}
             </p>
           </div>
 
@@ -131,6 +139,7 @@ export function HikeDrawer({ open, onClose, onCreated }: Props) {
         </div>
 
         <HikeForm
+          hike={hike}
           onCreated={onCreated}
           onCancel={requestClose}
           onDirtyChange={setDirty}

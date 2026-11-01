@@ -29,6 +29,7 @@ const CoordinatePicker = dynamic(() => import("./CoordinatePicker"), {
 });
 
 type Props = {
+  hike?: Hike | null;
   onCreated: (hike: Hike) => void;
   onCancel: () => void;
   onDirtyChange: (dirty: boolean) => void;
@@ -62,12 +63,29 @@ const DEFAULT_VALUES: HikeFormValues = {
   photos: [],
 };
 
+function toFormValues(hike: Hike): HikeFormValues {
+  return {
+    name: hike.name,
+    date: hike.date,
+    difficulty: hike.difficulty,
+    status: hike.status ?? "done",
+    weather: hike.weather,
+    description: hike.description ?? "",
+    distanceKm: hike.distanceKm,
+    elevationGainM: hike.elevationGainM,
+    durationMin: hike.durationMin,
+    position: hike.position,
+    photos: hike.photos.map((url) => ({ url })),
+  };
+}
+
 const WEATHER_OPTIONS = Object.entries(weatherMeta) as [
   keyof typeof weatherMeta,
   (typeof weatherMeta)[keyof typeof weatherMeta],
 ][];
 
-export function HikeForm({ onCreated, onCancel, onDirtyChange }: Props) {
+export function HikeForm({ hike, onCreated, onCancel, onDirtyChange }: Props) {
+  const isEdit = Boolean(hike);
   const {
     register,
     control,
@@ -77,12 +95,20 @@ export function HikeForm({ onCreated, onCancel, onDirtyChange }: Props) {
     formState: { errors, isDirty, isSubmitting },
   } = useForm<HikeFormValues>({
     resolver: zodResolver(hikeFormSchema),
-    defaultValues: DEFAULT_VALUES,
+    defaultValues: hike ? toFormValues(hike) : DEFAULT_VALUES,
     mode: "onBlur",
   });
 
   const description = useWatch({ control, name: "description" }) ?? "";
   const status = useWatch({ control, name: "status" }) ?? "done";
+
+  useEffect(() => {
+    if (hike) {
+      reset(toFormValues(hike));
+    } else {
+      reset(DEFAULT_VALUES);
+    }
+  }, [hike, reset]);
 
   useEffect(() => {
     onDirtyChange(isDirty);
@@ -103,11 +129,14 @@ export function HikeForm({ onCreated, onCancel, onDirtyChange }: Props) {
     }
 
     try {
-      const response = await fetch("/api/hikes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload.data),
-      });
+      const response = await fetch(
+        isEdit && hike ? `/api/hikes/${encodeURIComponent(hike.id)}` : "/api/hikes",
+        {
+          method: isEdit ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload.data),
+        }
+      );
 
       if (!response.ok) {
         const body = (await response.json().catch(() => null)) as
@@ -116,9 +145,11 @@ export function HikeForm({ onCreated, onCancel, onDirtyChange }: Props) {
         throw new Error(body?.error ?? "Could not save hike");
       }
 
-      const { hike } = (await response.json()) as { hike: Hike };
-      reset(DEFAULT_VALUES);
-      onCreated(hike);
+      const { hike: savedHike } = (await response.json()) as { hike: Hike };
+      if (!isEdit) {
+        reset(DEFAULT_VALUES);
+      }
+      onCreated(savedHike);
     } catch (error) {
       setError("root", {
         message:
@@ -442,7 +473,7 @@ export function HikeForm({ onCreated, onCancel, onDirtyChange }: Props) {
                 Saving…
               </>
             ) : (
-              "Save hike"
+              isEdit ? "Update hike" : "Save hike"
             )}
           </button>
         </div>
