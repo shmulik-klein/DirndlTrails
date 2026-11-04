@@ -8,6 +8,8 @@ import { HikeDrawer } from "@/components/hikes/HikeDrawer";
 import { HikeListDrawer } from "@/components/hikes/HikeListDrawer";
 import { ListHikesButton } from "@/components/hikes/ListHikesButton";
 import { MapStyleControl } from "@/components/hikes/MapStyleControl";
+import { StatsButton } from "@/components/hikes/StatsButton";
+import { StatsDrawer } from "@/components/hikes/StatsDrawer";
 import { AuthControl } from "@/components/AuthControl";
 import { isAdminCookieHeader } from "@/lib/auth";
 import type { Hike } from "@/lib/hikeSchema";
@@ -44,6 +46,7 @@ export default function Home({
   const [hikes, setHikes] = useState(initialHikes);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [listOpen, setListOpen] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(false);
   const [editingHike, setEditingHike] = useState<Hike | null>(null);
   const [focusedHikeId, setFocusedHikeId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -86,6 +89,8 @@ export default function Home({
   }, []);
   const openList = useCallback(() => setListOpen(true), []);
   const closeList = useCallback(() => setListOpen(false), []);
+  const openStats = useCallback(() => setStatsOpen(true), []);
+  const closeStats = useCallback(() => setStatsOpen(false), []);
 
   const handleSelectHike = useCallback((hike: Hike) => {
     setFocusedHikeId(hike.id);
@@ -176,6 +181,7 @@ export default function Home({
         <MapStyleControl baseStyle={baseStyle} onChange={setStyle} />
 
         <ListHikesButton onClick={openList} />
+        <StatsButton onClick={openStats} />
         {isAdmin ? <AddHikeButton onClick={openDrawer} /> : null}
 
         <HikeListDrawer
@@ -188,6 +194,8 @@ export default function Home({
           onRemoveHike={isAdmin ? handleRemoveHike : undefined}
           removingIds={removingIds}
         />
+
+        <StatsDrawer open={statsOpen} hikes={hikes} onClose={closeStats} />
 
         {isAdmin ? (
           <HikeDrawer

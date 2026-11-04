@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { RefObject } from "react";
 import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet";
 import L from "leaflet";
@@ -15,6 +15,14 @@ import type { Hike } from "@/lib/hikeSchema";
 import { getMapStyleUrl, type MapStyle } from "@/lib/useMapStyle";
 import { weatherMeta } from "@/lib/weather";
 import "@/lib/leafletIcons";
+
+const PLANNED_ICON = L.divIcon({
+  className: "",
+  html: '<div style="position: relative; width: 25px; height: 41px;"><svg width="25" height="41" viewBox="0 0 25 41"><path d="M12.5 0C5.596 0 0 5.596 0 12.5C0 21.875 12.5 41 12.5 41C12.5 41 25 21.875 25 12.5C25 5.596 19.404 0 12.5 0Z" fill="#38bdf8" fill-opacity="0.85" stroke="#0284c7" stroke-width="2" stroke-dasharray="4 2"/></svg><div style="position: absolute; top: 6px; left: 50%; transform: translateX(-50%); width: 10px; height: 10px; border-radius: 50%; background: white; border: 2px solid #0284c7;"></div></div>',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+});
 
 type Props = {
   hikes: Hike[];
@@ -242,12 +250,52 @@ export default function Map({
   const markerRefs = useRef<Record<string, L.Marker | null>>({});
   const apiKey = process.env.NEXT_PUBLIC_MAPTILER_KEY ?? "";
 
+  const markers = useMemo(() => {
+    return hikes.map((hike) => {
+      const status = hike.status ?? "done";
+      const isPlanned = status === "planned";
+
+      if (isPlanned) {
+        return (
+          <Marker
+            key={hike.id}
+            position={hike.position}
+            opacity={0.6}
+            ref={(marker) => {
+              markerRefs.current[hike.id] = marker;
+            }}
+            icon={PLANNED_ICON}
+          >
+            <Popup maxWidth={280} minWidth={200}>
+              <HikePopup hike={hike} onRemove={onRemoveHike} onEdit={onEditHike} />
+            </Popup>
+          </Marker>
+        );
+      }
+
+      return (
+        <Marker
+          key={hike.id}
+          position={hike.position}
+          ref={(marker) => {
+            markerRefs.current[hike.id] = marker;
+          }}
+        >
+          <Popup maxWidth={280} minWidth={200}>
+            <HikePopup hike={hike} onRemove={onRemoveHike} onEdit={onEditHike} />
+          </Popup>
+        </Marker>
+      );
+    });
+  }, [hikes, onRemoveHike, onEditHike]);
+
   return (
     <MapContainer
       center={DEFAULT_CENTER}
       zoom={10}
       scrollWheelZoom
       className="h-full w-full"
+      preferCanvas={true}
     >
       <TileLayer
         key={mapStyle}
@@ -255,6 +303,9 @@ export default function Map({
         url={getMapStyleUrl(mapStyle, apiKey)}
         tileSize={512}
         zoomOffset={-1}
+        updateWhenIdle={true}
+        updateWhenZooming={false}
+        keepBuffer={2}
       />
 
       <FitAllHikes hikes={hikes} />
@@ -264,48 +315,7 @@ export default function Map({
         markerRefs={markerRefs}
       />
 
-      {hikes.map((hike) => {
-        const status = hike.status ?? "done";
-        const isPlanned = status === "planned";
-
-        if (isPlanned) {
-          return (
-            <Marker
-              key={hike.id}
-              position={hike.position}
-              opacity={0.6}
-              ref={(marker) => {
-                markerRefs.current[hike.id] = marker;
-              }}
-              icon={L.divIcon({
-                className: "",
-                html: '<div style="position: relative; width: 25px; height: 41px;"><svg width="25" height="41" viewBox="0 0 25 41"><path d="M12.5 0C5.596 0 0 5.596 0 12.5C0 21.875 12.5 41 12.5 41C12.5 41 25 21.875 25 12.5C25 5.596 19.404 0 12.5 0Z" fill="#38bdf8" fill-opacity="0.85" stroke="#0284c7" stroke-width="2" stroke-dasharray="4 2"/></svg><div style="position: absolute; top: 6px; left: 50%; transform: translateX(-50%); width: 10px; height: 10px; border-radius: 50%; background: white; border: 2px solid #0284c7;"></div></div>',
-                iconSize: [25, 41],
-                iconAnchor: [12, 41],
-                popupAnchor: [1, -34],
-              })}
-            >
-              <Popup>
-                <HikePopup hike={hike} onRemove={onRemoveHike} onEdit={onEditHike} />
-              </Popup>
-            </Marker>
-          );
-        }
-
-        return (
-          <Marker
-            key={hike.id}
-            position={hike.position}
-            ref={(marker) => {
-              markerRefs.current[hike.id] = marker;
-            }}
-          >
-            <Popup>
-              <HikePopup hike={hike} onRemove={onRemoveHike} />
-            </Popup>
-          </Marker>
-        );
-      })}
+      {markers}
     </MapContainer>
   );
 }
