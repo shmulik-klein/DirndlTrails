@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@sentry/nextjs": "^11.10.0",
-    "jose": "^6.2.13",
+    "jose": "^6.2.15",
     "leaflet": "^1.9.4",
     "next": "^16.4.3",
     "pino": "^10.4.0",
