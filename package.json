@@ -22,10 +22,10 @@
     "verify": "npm run lint && npm run typecheck && npm run test && npm run build"
   },
   "dependencies": {
-    "@sentry/nextjs": "^11.10.0",
-    "jose": "^6.2.13",
+    "@sentry/nextjs": "^11.11.0",
+    "jose": "^6.2.16",
     "leaflet": "^1.9.4",
-    "next": "^16.4.3",
+    "next": "^16.4.5",
     "pino": "^10.4.0",
     "proper-lockfile": "^4.1.2",
     "react": "^19.3.1",
